@@ -39,7 +39,10 @@ void parse_input(std::string path) {
     cout << "Unable to open file";
 }
 
-int main() {
-  parse_input("./day1.txt");
+int main(int argc, char* argv[]) {
+  if (argc == 1){
+    return 1;
+  }
+  parse_input(argv[1]);
   return 0;
 }

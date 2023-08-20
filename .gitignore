@@ -1,3 +1,5 @@
 mv.py
 Pipfile*
-*/build/
+build/
+target/
+Cargo*
