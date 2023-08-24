@@ -2,4 +2,4 @@ mv.py
 Pipfile*
 build/
 target/
-Cargo*
+Cargo.lock
