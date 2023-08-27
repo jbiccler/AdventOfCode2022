@@ -50,7 +50,7 @@ vector<Move> parse_input(string path) {
         dir[0] = 0;
         dir[1] = 1;
       }
-      if (dir[0] == 0 && dir[1] == 0){
+      if (dir[0] == 0 && dir[1] == 0) {
         cout << "Didn't match direction" << endl;
       }
       for (int i = 0; i < nr; i++) {
@@ -92,38 +92,43 @@ optional<Move> determine_move(Grid &grid1, Grid &grid2) {
   auto [x1, y1] = grid1.pos;
   auto [x2, y2] = grid2.pos;
 
-  if ((std::abs(x1 - x2) > 1) || (std::abs((y2 - y1) > 1))) {
+  if ((std::abs(x1 - x2) > 1) || (std::abs(y2 - y1) > 1)) {
     // need to make a move
     int x{0};
     int y{0};
     if (x1 > x2) {
-      x = 1; 
-    } else if (x1 < x2){
+      x = 1;
+    } else if (x1 < x2) {
       x = -1;
     }
     if (y1 > y2) {
-      y = 1; 
-    } else if (y1 < y2){
-      y =-1;
+      y = 1;
+    } else if (y1 < y2) {
+      y = -1;
     }
-    return Move(x,y);
+    return Move(x, y);
   } else {
     // no move required
     return std::nullopt;
   }
 }
 
-unsigned int nr_visited(Grid grid) {
-  // for debugging to be removed in release build
-    unsigned int sum{0}; 
-    for (auto r=0;r<grid.visited.size();r++){
-    for (auto c=0;c<grid.visited[0].size();c++){
-      if (grid.visited[r][c]){
-        sum +=1;
+int run(vector<Move> &moves, unsigned int n, unsigned int nrows,
+        unsigned int ncols) {
+  vector<Grid> grids;
+  for (int i = 0; i < n; i++) {
+    grids.push_back(construct_grid(nrows, ncols));
+  }
+  for (auto m : moves) {
+    make_move(grids[0], m);
+    for (int i = 1; i < n; i++) {
+      auto newmove = determine_move(grids[i - 1], grids[i]);
+      if (newmove) {
+        make_move(grids[i], newmove.value());
       }
+    }
   }
-  }
-  return sum;
+  return grids[n - 1].get_n_visited();
 }
 
 int main(int argc, char *argv[]) {
@@ -132,27 +137,12 @@ int main(int argc, char *argv[]) {
   } else {
     auto moves = parse_input(argv[1]);
     // TODO set these dynamically based on input or pass as arg
-    int nrows = 1000;
-    int ncols = 1000;
-    // part 1
-    unsigned int n1{2};
-    vector<Grid> grids1;
-    for (int i = 0; i < n1; i++) {
-      grids1.push_back(construct_grid(nrows, ncols));
-    }
-    for (auto m : moves) {
-      make_move(grids1[0], m);
-      for (int i = 1; i < n1; i++) {
-        auto newmove = determine_move(grids1[i - 1], grids1[i]);
-        if (newmove) {
-          make_move(grids1[i], newmove.value());
-        }
-      }
-    }
-    auto n_visited_part1 = grids1[n1 - 1].get_n_visited();
-    cout << "Number of visited squares by tail of part1: " << n_visited_part1
-         << endl;
-    cout << "Number of visited squares by tail of part1: " << nr_visited(grids1[n1-1])
-         << endl;
+    unsigned int ncols = 1000;
+    unsigned int nrows = 1000;
+    cout << "Number of visited squares by tail of part1: "
+         << run(moves, 2, nrows, ncols) << endl;
+    cout << "Number of visited squares by tail of part2: "
+         << run(moves, 10, nrows, ncols) << endl;
   }
+  return 0;
 };
