@@ -11,6 +11,12 @@ struct Grid {
     grid: Vec<Vec<bool>>,
     pos: (usize, usize),
     visited: Vec<Vec<bool>>,
+    n_visited: usize,
+}
+impl Grid {
+    fn get_n_visited(&self) -> usize {
+        self.n_visited
+    }
 }
 
 fn main() {
@@ -21,38 +27,29 @@ fn main() {
         let nrows = 1000;
         let ncols = 1000;
         // part 1
-        let n1: usize = 2;
-        let mut grids1: Vec<Grid> = (0..n1).map(|_x| construct_grid(nrows, ncols)).collect();
-        for m in moves.clone() {
-            make_move(&mut grids1[0], &m);
-            for i in 1..n1 {
-                if let Some(newmove) = determine_move(&grids1[i - 1], &grids1[i]) {
-                    make_move(&mut grids1[i], &newmove);
-                }
-            }
-        }
-        let n_visited_part1 = nr_visited(&grids1[n1.saturating_sub(1)]);
         println!(
             "Number of visited squares by tail of part 1: {}",
-            n_visited_part1
+            run(&moves, 2, ncols, nrows)
         );
         // part 2
-        let n2: usize = 10;
-        let mut grids2: Vec<Grid> = (0..n2).map(|_x| construct_grid(nrows, ncols)).collect();
-        for m in moves {
-            make_move(&mut grids2[0], &m);
-            for i in 1..n2 {
-                if let Some(newmove) = determine_move(&grids2[i - 1], &grids2[i]) {
-                    make_move(&mut grids2[i], &newmove);
-                }
-            }
-        }
-        let n_visited_part2 = nr_visited(&grids2[n2.saturating_sub(1)]);
         println!(
-            "Number of visited squares by tail of part 2: {}",
-            n_visited_part2
+            "Number of visited squares by tail of part 1: {}",
+            run(&moves, 10, ncols, nrows)
         );
     }
+}
+
+fn run(moves: &Vec<Move>, n: usize, ncols: usize, nrows: usize) -> usize {
+    let mut grids: Vec<Grid> = (0..n).map(|_x| construct_grid(nrows, ncols)).collect();
+    for m in moves {
+        make_move(&mut grids[0], &m);
+        for i in 1..n {
+            if let Some(newmove) = determine_move(&grids[i - 1], &grids[i]) {
+                make_move(&mut grids[i], &newmove);
+            }
+        }
+    }
+    return grids[n.saturating_sub(1)].get_n_visited();
 }
 
 fn input_parse(path: &String) -> io::Result<Vec<Move>> {
@@ -93,6 +90,7 @@ fn construct_grid(nrows: usize, ncols: usize) -> Grid {
         grid,
         pos: (nrows / 2, ncols / 2),
         visited,
+        n_visited: 1,
     };
 }
 
@@ -106,7 +104,10 @@ fn make_move(grid: &mut Grid, m: &Move) {
     let new_row = (row as i32 + m.x) as usize;
     let new_col = (col as i32 + m.y) as usize;
     grid.grid[new_row][new_col] = true;
-    grid.visited[new_row][new_col] = true;
+    if !grid.visited[new_row][new_col] {
+        grid.n_visited += 1;
+        grid.visited[new_row][new_col] = true;
+    }
     grid.pos = (new_row, new_col);
 }
 
@@ -123,16 +124,4 @@ fn determine_move(grid1: &Grid, grid2: &Grid) -> Option<Move> {
         // no move required
         return None;
     }
-}
-
-fn nr_visited(grid: &Grid) -> u32 {
-    let mut sum: u32 = 0;
-    for r in 0..grid.visited.len() {
-        for c in 0..grid.visited[0].len() {
-            if grid.visited[r][c] {
-                sum += 1;
-            }
-        }
-    }
-    return sum;
 }
