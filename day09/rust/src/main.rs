@@ -76,14 +76,7 @@ fn input_parse(path: &String) -> io::Result<Vec<Move>> {
 }
 
 fn construct_grid(nrows: usize, ncols: usize) -> Grid {
-    let mut grid: Vec<Vec<bool>> = Vec::new();
-    for _r in 0..nrows {
-        let mut row: Vec<bool> = Vec::new();
-        for _c in 0..ncols {
-            row.push(false);
-        }
-        grid.push(row);
-    }
+    let mut grid: Vec<Vec<bool>> = vec![vec![false; ncols]; nrows];
     grid[nrows / 2][ncols / 2] = true;
     let visited = grid.clone();
     return Grid {
