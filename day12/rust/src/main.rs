@@ -29,32 +29,24 @@ struct Grid {
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() > 1 {
-        let grid = parse_input(&args[1]).unwrap();
+        let grid = parse_input(&args[1], false).unwrap();
         print_grid(&grid, true);
         // Part 1
         println!(
             "Part 1 -- number of steps required: {}",
-            dijkstra(&grid, grid.start, grid.end)
+            dijkstra(&grid, grid.start, Some(grid.end), None)
         );
 
         // Part 2
-        let mut min_steps: i32 = std::i32::MAX;
-        for r in 0..grid.nodes.len() {
-            for c in 0..grid.nodes[0].len() {
-                // select the nodes with height a = 0
-                if grid.nodes[r][c].height == 0 {
-                    let tmp = dijkstra(&grid, (r, c), grid.end);
-                    if tmp < min_steps {
-                        min_steps = tmp;
-                    }
-                }
-            }
-        }
-        println!("Part 2 -- number of steps required: {}", min_steps);
+        let grid2 = parse_input(&args[1], true).unwrap();
+        println!(
+            "Part 2 -- number of steps required: {}",
+            dijkstra(&grid2, grid2.end, None, Some(0))
+        );
     }
 }
 
-fn parse_input(path: &String) -> io::Result<Grid> {
+fn parse_input(path: &String, reverse: bool) -> io::Result<Grid> {
     let file = File::open(path)?;
     let reader = BufReader::new(file);
     let alphabet = "abcdefghijklmnopqrstuvwxyz";
@@ -106,62 +98,126 @@ fn parse_input(path: &String) -> io::Result<Grid> {
     let mut grid = Grid { nodes, start, end };
 
     // set edges
-    for r in 0..nrows {
-        for c in 0..ncols {
-            // up
-            if r > 0 {
-                if grid.nodes[r - 1][c]
-                    .height
-                    .saturating_sub(grid.nodes[r][c].height)
-                    <= 1
-                {
-                    grid.nodes[r][c].edges.push(Edge {
-                        from: (r, c),
-                        to: (r - 1, c),
-                        weight: 1,
-                    });
+    if reverse {
+        for r in 0..nrows {
+            for c in 0..ncols {
+                // TODO to much repetition -> should really be refactored into function...
+                // up
+                if r > 0 {
+                    if grid.nodes[r - 1][c]
+                        .height
+                        .saturating_sub(grid.nodes[r][c].height)
+                        <= 1
+                    {
+                        grid.nodes[r - 1][c].edges.push(Edge {
+                            to: (r, c),
+                            from: (r - 1, c),
+                            weight: 1,
+                        });
+                    }
+                }
+                // down
+                if r < nrows - 1 {
+                    if grid.nodes[r + 1][c]
+                        .height
+                        .saturating_sub(grid.nodes[r][c].height)
+                        <= 1
+                    {
+                        grid.nodes[r + 1][c].edges.push(Edge {
+                            to: (r, c),
+                            from: (r + 1, c),
+                            weight: 1,
+                        });
+                    }
+                }
+                // left
+                if c > 0 {
+                    if grid.nodes[r][c - 1]
+                        .height
+                        .saturating_sub(grid.nodes[r][c].height)
+                        <= 1
+                    {
+                        grid.nodes[r][c - 1].edges.push(Edge {
+                            to: (r, c),
+                            from: (r, c - 1),
+                            weight: 1,
+                        });
+                    }
+                }
+                // right
+                if c < ncols - 1 {
+                    if grid.nodes[r][c + 1]
+                        .height
+                        .saturating_sub(grid.nodes[r][c].height)
+                        <= 1
+                    {
+                        grid.nodes[r][c + 1].edges.push(Edge {
+                            to: (r, c),
+                            from: (r, c + 1),
+                            weight: 1,
+                        });
+                    }
                 }
             }
-            // down
-            if r < nrows - 1 {
-                if grid.nodes[r + 1][c]
-                    .height
-                    .saturating_sub(grid.nodes[r][c].height)
-                    <= 1
-                {
-                    grid.nodes[r][c].edges.push(Edge {
-                        from: (r, c),
-                        to: (r + 1, c),
-                        weight: 1,
-                    });
+        }
+    } else {
+        for r in 0..nrows {
+            for c in 0..ncols {
+                // up
+                if r > 0 {
+                    if grid.nodes[r - 1][c]
+                        .height
+                        .saturating_sub(grid.nodes[r][c].height)
+                        <= 1
+                    {
+                        grid.nodes[r][c].edges.push(Edge {
+                            from: (r, c),
+                            to: (r - 1, c),
+                            weight: 1,
+                        });
+                    }
                 }
-            }
-            // left
-            if c > 0 {
-                if grid.nodes[r][c - 1]
-                    .height
-                    .saturating_sub(grid.nodes[r][c].height)
-                    <= 1
-                {
-                    grid.nodes[r][c].edges.push(Edge {
-                        from: (r, c),
-                        to: (r, c - 1),
-                        weight: 1,
-                    });
+                // down
+                if r < nrows - 1 {
+                    if grid.nodes[r + 1][c]
+                        .height
+                        .saturating_sub(grid.nodes[r][c].height)
+                        <= 1
+                    {
+                        grid.nodes[r][c].edges.push(Edge {
+                            from: (r, c),
+                            to: (r + 1, c),
+                            weight: 1,
+                        });
+                    }
                 }
-            }
-            // right
-            if c < ncols - 1 {
-                if grid.nodes[r][c + 1]
-                    .height
-                    .saturating_sub(grid.nodes[r][c].height)
-                    <= 1
-                {
-                    grid.nodes[r][c].edges.push(Edge {
-                        from: (r, c),
-                        to: (r, c + 1),
-                        weight: 1,
-                    });
+                // left
+                if c > 0 {
+                    if grid.nodes[r][c - 1]
+                        .height
+                        .saturating_sub(grid.nodes[r][c].height)
+                        <= 1
+                    {
+                        grid.nodes[r][c].edges.push(Edge {
+                            from: (r, c),
+                            to: (r, c - 1),
+                            weight: 1,
+                        });
+                    }
+                }
+                // right
+                if c < ncols - 1 {
+                    if grid.nodes[r][c + 1]
+                        .height
+                        .saturating_sub(grid.nodes[r][c].height)
+                        <= 1
+                    {
+                        grid.nodes[r][c].edges.push(Edge {
+                            from: (r, c),
+                            to: (r, c + 1),
+                            weight: 1,
+                        });
+                    }
                 }
             }
         }
@@ -169,7 +225,15 @@ fn parse_input(path: &String) -> io::Result<Grid> {
     return Ok(grid);
 }
 
-fn dijkstra(grid: &Grid, start_idx: (usize, usize), end_idx: (usize, usize)) -> i32 {
+fn dijkstra(
+    grid: &Grid,
+    start_idx: (usize, usize),
+    end_idx: Option<(usize, usize)>,
+    target_height: Option<usize>,
+) -> i32 {
+    if end_idx == None && target_height == None {
+        return -1;
+    }
     // distance matrix -> same structure as nodes
     let mut dist: Vec<Vec<i32>> = vec![vec![std::i32::MAX; grid.nodes[0].len()]; grid.nodes.len()];
     // setup queue of to be visited nodes
@@ -182,6 +246,8 @@ fn dijkstra(grid: &Grid, start_idx: (usize, usize), end_idx: (usize, usize)) -> 
     }
     // set start position to dist 0
     dist[start_idx.0][start_idx.1] = 0;
+    // initialize end index
+    let mut target_idx: (usize, usize) = (0, 0);
     while queue.len() > 0 {
         // find node with current minimum distance
         let mut min_dist: i32 = std::i32::MAX;
@@ -195,10 +261,20 @@ fn dijkstra(grid: &Grid, start_idx: (usize, usize), end_idx: (usize, usize)) -> 
         // pop the node with current min distance from the queue and update the distances to the
         // nodes that are reachable from this visited node
         if let Some(visited) = queue.remove(min_idx) {
-            // if visited.idx == end_idx {
-            //     // visiting end node -> stop
-            //     break;
-            // }
+            if let Some(target) = target_height {
+                if visited.height == target {
+                    // visiting end node -> stop
+                    target_idx = visited.idx;
+                    break;
+                }
+            } else if let Some(end) = end_idx {
+                if visited.idx == end {
+                    // visiting end node -> stop
+                    target_idx = visited.idx;
+                    break;
+                }
+            }
+
             let current_dist = dist[visited.idx.0][visited.idx.1];
             if current_dist == std::i32::MAX {
                 // node that can't be visited
@@ -212,8 +288,7 @@ fn dijkstra(grid: &Grid, start_idx: (usize, usize), end_idx: (usize, usize)) -> 
             }
         }
     }
-    // finnaly, return the distance to the end node
-    return dist[end_idx.0][end_idx.1];
+    return dist[target_idx.0][target_idx.1];
 }
 
 fn print_grid(grid: &Grid, print_chars: bool) {
