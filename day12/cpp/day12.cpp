@@ -36,7 +36,7 @@ struct Grid {
       : nodes(nodes), start(start), end(end){};
 };
 
-void check_construct_edge(Grid& grid, array<unsigned int, 2> from,
+void check_construct_edge(Grid &grid, array<unsigned int, 2> from,
                           array<unsigned int, 2> to, bool reverse) {
   auto fr{from[0]};
   auto fc{from[1]};
@@ -67,15 +67,16 @@ Grid parse_input(string path, bool reverse) {
       if (line.size() > 0) {
         for (unsigned int j = 0; j < line.size(); j++) {
           auto height = alphabet.find(line[j]);
-          array<unsigned int, 2> idx{i, j};
-          if (height >= 0) {
-            tmp.push_back(Node(vector<Edge>{}, height, line[j], idx));
+          array<unsigned int, 2> idx = {i, j};
+          if (height != string::npos) {
+            tmp.push_back(Node(vector<Edge>(), height, line[j], idx));
           } else if (line[j] == 'S') {
             // start node with height a  = 0
-            tmp.push_back(Node(vector<Edge>{}, 0, line[j], idx));
+            tmp.push_back(Node(vector<Edge>(), 0, line[j], idx));
             start = idx;
           } else if (line[j] == 'E') {
-            tmp.push_back(Node(vector<Edge>{}, 25, line[j], idx));
+            // start node with height z = 25
+            tmp.push_back(Node(vector<Edge>(), 25, line[j], idx));
             end = idx;
           }
         }
@@ -89,8 +90,8 @@ Grid parse_input(string path, bool reverse) {
   Grid grid{nodes, start, end};
 
   // set edges
-  for (unsigned int r; r < nrows; r++) {
-    for (unsigned int c; c < ncols; c++) {
+  for (unsigned int r = 0; r < nrows; r++) {
+    for (unsigned int c = 0; c < ncols; c++) {
       array<unsigned int, 2> from{r, c};
       if (r > 0) {
         // up
@@ -117,8 +118,8 @@ Grid parse_input(string path, bool reverse) {
   return grid;
 }
 
-int dijkstra(Grid& grid, array<unsigned int, 2> start_idx,
-             array<unsigned int, 2> end_idx, int target_height) {
+int dijkstra(Grid &grid, array<unsigned int, 2> start_idx,
+             array<unsigned int, 2> end_idx, int target_height = -1) {
   // set target_height to -1 for default exhaustive search
   // distance matrix -> same structure as nodes
   vector<vector<int>> dist(
@@ -144,30 +145,27 @@ int dijkstra(Grid& grid, array<unsigned int, 2> start_idx,
         min_dist = dist[queue[i].idx[0]][queue[i].idx[1]];
       }
     }
-    // pop the node with current min distance from the queue and update the
-    // distances to the nodes that are reachable from this visited node
+    // check valid index
     if (min_idx >= 0 && min_idx < queue.size()) {
+      // pop the node with current min distance from the queue and update the
+      // distances to the nodes that are reachable from this visited node
       // remove element and store in variable
       auto visited = queue[min_idx];
-      cout << endl;
-      cout << "visited " << visited.idx[0] << visited.idx[1] << endl;
       queue.erase(queue.begin() + min_idx);
       if (target_height >= 0 && visited.height == target_height) {
         // visited target end node -> stop
         target_idx = visited.idx;
-        cout << "visited target_height" << visited.idx[0] << visited.idx[1]
-             << endl;
         break;
-      } else if (visited.idx == end_idx) {
+      } else if (visited.idx == end_idx && target_height < 0) {
         // visited end node -> stop
         target_idx = visited.idx;
-        cout << "visited end_idx" << visited.idx[0] << visited.idx[1] << endl;
         break;
       }
       auto current_dist = dist[visited.idx[0]][visited.idx[1]];
       if (current_dist == std::numeric_limits<int>::max()) {
         // node that can't be visited
         // as only nodes with MAX distance are left...
+        cout << "No nodes left to visit!" << endl;
         break;
       }
       for (auto e : visited.edges) {
@@ -177,11 +175,10 @@ int dijkstra(Grid& grid, array<unsigned int, 2> start_idx,
       }
     }
   };
-  cout << target_idx[0] << " " << target_idx[1] << endl;
   return dist[target_idx[0]][target_idx[1]];
 };
 
-void print_grid(Grid& grid, bool print_chars) {
+void print_grid(Grid &grid, bool print_chars) {
   for (auto r = 0; r < grid.nodes.size(); r++) {
     for (auto c = 0; c < grid.nodes[0].size(); c++) {
       if (print_chars) {
@@ -194,10 +191,14 @@ void print_grid(Grid& grid, bool print_chars) {
   }
 };
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   if (argc > 1) {
     auto grid1 = parse_input(argv[1], false);
-    print_grid(grid1, true);
+    if (argc > 2) {
+      if (std::string(argv[2]) == "true") {
+        print_grid(grid1, true);
+      }
+    }
     cout << "Part 1 -- number of steps required: "
          << dijkstra(grid1, grid1.start, grid1.end, -1) << endl;
     auto grid2 = parse_input(argv[1], true);
