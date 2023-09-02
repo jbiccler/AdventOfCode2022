@@ -97,132 +97,57 @@ fn parse_input(path: &String, reverse: bool) -> io::Result<Grid> {
     let ncols = nodes[0].len();
     let mut grid = Grid { nodes, start, end };
 
-    // set edges
-    if reverse {
-        for r in 0..nrows {
-            for c in 0..ncols {
-                // TODO to much repetition -> should really be refactored into function...
-                // up
-                if r > 0 {
-                    if grid.nodes[r - 1][c]
-                        .height
-                        .saturating_sub(grid.nodes[r][c].height)
-                        <= 1
-                    {
-                        grid.nodes[r - 1][c].edges.push(Edge {
-                            to: (r, c),
-                            from: (r - 1, c),
-                            weight: 1,
-                        });
-                    }
-                }
-                // down
-                if r < nrows - 1 {
-                    if grid.nodes[r + 1][c]
-                        .height
-                        .saturating_sub(grid.nodes[r][c].height)
-                        <= 1
-                    {
-                        grid.nodes[r + 1][c].edges.push(Edge {
-                            to: (r, c),
-                            from: (r + 1, c),
-                            weight: 1,
-                        });
-                    }
-                }
-                // left
-                if c > 0 {
-                    if grid.nodes[r][c - 1]
-                        .height
-                        .saturating_sub(grid.nodes[r][c].height)
-                        <= 1
-                    {
-                        grid.nodes[r][c - 1].edges.push(Edge {
-                            to: (r, c),
-                            from: (r, c - 1),
-                            weight: 1,
-                        });
-                    }
-                }
-                // right
-                if c < ncols - 1 {
-                    if grid.nodes[r][c + 1]
-                        .height
-                        .saturating_sub(grid.nodes[r][c].height)
-                        <= 1
-                    {
-                        grid.nodes[r][c + 1].edges.push(Edge {
-                            to: (r, c),
-                            from: (r, c + 1),
-                            weight: 1,
-                        });
-                    }
-                }
+    for r in 0..nrows {
+        for c in 0..ncols {
+            // up
+            if r > 0 {
+                check_construct_edge(&mut grid, (r, c), (r - 1, c), reverse);
             }
-        }
-    } else {
-        for r in 0..nrows {
-            for c in 0..ncols {
-                // up
-                if r > 0 {
-                    if grid.nodes[r - 1][c]
-                        .height
-                        .saturating_sub(grid.nodes[r][c].height)
-                        <= 1
-                    {
-                        grid.nodes[r][c].edges.push(Edge {
-                            from: (r, c),
-                            to: (r - 1, c),
-                            weight: 1,
-                        });
-                    }
-                }
-                // down
-                if r < nrows - 1 {
-                    if grid.nodes[r + 1][c]
-                        .height
-                        .saturating_sub(grid.nodes[r][c].height)
-                        <= 1
-                    {
-                        grid.nodes[r][c].edges.push(Edge {
-                            from: (r, c),
-                            to: (r + 1, c),
-                            weight: 1,
-                        });
-                    }
-                }
-                // left
-                if c > 0 {
-                    if grid.nodes[r][c - 1]
-                        .height
-                        .saturating_sub(grid.nodes[r][c].height)
-                        <= 1
-                    {
-                        grid.nodes[r][c].edges.push(Edge {
-                            from: (r, c),
-                            to: (r, c - 1),
-                            weight: 1,
-                        });
-                    }
-                }
-                // right
-                if c < ncols - 1 {
-                    if grid.nodes[r][c + 1]
-                        .height
-                        .saturating_sub(grid.nodes[r][c].height)
-                        <= 1
-                    {
-                        grid.nodes[r][c].edges.push(Edge {
-                            from: (r, c),
-                            to: (r, c + 1),
-                            weight: 1,
-                        });
-                    }
-                }
+            // down
+            if r < nrows - 1 {
+                check_construct_edge(&mut grid, (r, c), (r + 1, c), reverse);
+            }
+            // left
+            if c > 0 {
+                check_construct_edge(&mut grid, (r, c), (r, c - 1), reverse);
+            }
+            // right
+            if c < ncols - 1 {
+                check_construct_edge(&mut grid, (r, c), (r, c + 1), reverse);
             }
         }
     }
     return Ok(grid);
+}
+
+fn check_construct_edge(grid: &mut Grid, from: (usize, usize), to: (usize, usize), reverse: bool) {
+    let (fr, fc) = from;
+    let (tr, tc) = to;
+    if reverse {
+        if grid.nodes[tr][tc]
+            .height
+            .saturating_sub(grid.nodes[fr][fc].height)
+            <= 1
+        {
+            grid.nodes[tr][tc].edges.push(Edge {
+                from: to,
+                to: from,
+                weight: 1,
+            });
+        }
+    } else {
+        if grid.nodes[tr][tc]
+            .height
+            .saturating_sub(grid.nodes[fr][fc].height)
+            <= 1
+        {
+            grid.nodes[fr][fc].edges.push(Edge {
+                from: from,
+                to: to,
+                weight: 1,
+            });
+        }
+    }
 }
 
 fn dijkstra(
